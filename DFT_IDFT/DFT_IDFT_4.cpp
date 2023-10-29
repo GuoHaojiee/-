@@ -34,19 +34,16 @@ int main(){
     cout.precision(10);
     double L = 1;
     double T = 1;
-    double alpha = 2 * M_PI/L;
-    double h, tau; 
     int M, N;
     cout << "Please input M , N : " << endl;
     cin >> M >> N;
-    h = L / M; tau = T / N;
+    double h = L / M;
+    double tau = T / N;
     if ((is_good_h_tau(h,tau)) == false) {
         cout << "M, N are not good" << endl;
         return 0; 
     }
-    double error1, error2;
-    double sum = 0;
-    
+
     //Выделение памяти:
     double** u = (double**) fftw_malloc(sizeof(double*) * (N+1));
     double** f = (double**) fftw_malloc(sizeof(double*) * (N+1));
@@ -55,8 +52,8 @@ int main(){
     for (int i = 0; i <= N; ++i) {
         u[i] = (double*) fftw_malloc(sizeof(double) * (M+1));
         f[i] = (double*) fftw_malloc(sizeof(double) * (M+1));
-        u_k[i] = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (M+1));
-        f_k[i] = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (M+1));
+        u_k[i] = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (M+1)/2+1);
+        f_k[i] = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (M+1)/2+1);
     }
 
     for (int i = 0; i <= M; ++i) { 
@@ -70,17 +67,21 @@ int main(){
     }
     
     //Преобразование Фурье
-    fftw_plan p1 = fftw_plan_dft_r2c_1d(M+1, u[0] , u_k[0] , FFTW_ESTIMATE);
+    fftw_plan p1 = fftw_plan_dft_r2c_1d(M+1, u[0] , u_k[0], FFTW_ESTIMATE);
     fftw_execute(p1);
-    for (int k = 0; k <= M; k++) {
-        u_k[0][k][0] /= (M+1);
-        u_k[0][k][1] /= (M+1);
+
+    for (int k = 0; k < (M+1)/2+1; k++) {
+        cout << u_k[0][k][0] << " " << u_k[0][k][1] << endl;
+        u_k[0][k][0] /= (M+1)/2 +1;
+        u_k[0][k][1] /= (M+1)/2 +1;
     }
+
+    double alpha = 2 * M_PI/L;
     for(int n = 1; n <= N; n++){
         fftw_plan p2 = fftw_plan_dft_r2c_1d(M+1, f[n-1] , f_k[n-1] , FFTW_ESTIMATE);
         fftw_execute(p2);
         fftw_destroy_plan(p2);
-        for(int k = 0; k <= M; k++){
+        for(int k = 0; k < (M+1)/2+1; k++){
             u_k[n][k][0] = u_k[n-1][k][0] - tau * alpha*alpha*k*k*u_k[n-1][k][0] + tau*f_k[n-1][k][0]/(M+1); 
             u_k[n][k][1] = u_k[n-1][k][1] - tau * alpha*alpha*k*k*u_k[n-1][k][1] + tau*f_k[n-1][k][1]/(M+1);   
         }
@@ -88,15 +89,17 @@ int main(){
         fftw_execute(p3);
         fftw_destroy_plan(p3);
     }
-    for (int n = 0; n <= N; ++n) {
+    for (int n = 0; n <= N; n++) {
         u[n][0] = pi_1(n * tau);
         u[n][M] = pi_2(n * tau);
     }
 
     //Вычисление ошибки:
+    double error1, error2;
+    double sum = 0;
     for(int i = 0; i <= M; i++){
         sum += pow((u_f(1, i * h) - u[N][i]), 2);    
-        //cout << u_f( tau * (N), i * h) << " "<< u[N][i] << endl;
+        //cout << u_f( tau * (1), i * h) << " "<< u[1][i] << endl;
     }
     error1 = sqrt(sum * h);
     double max = u_f(1, 0 * h) - u[N][0] ;
@@ -116,7 +119,7 @@ int main(){
         fftw_free(f[i]);
         fftw_free(f_k[i]);
     }
-    fftw_destroy_plan(p1);
+   // fftw_destroy_plan(p1);
     fftw_free(u);
     fftw_free(u_k);
     fftw_free(f);
