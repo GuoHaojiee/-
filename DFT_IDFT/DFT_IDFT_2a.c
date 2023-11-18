@@ -1,49 +1,44 @@
+#include <iostream>
 #include <stdio.h>
 #include <math.h>
 #include <fftw3.h>
 
+using namespace std;
 /*
 u(0) = u(1) = 0
-u(x) = sin(PI * x) 
-x-(0, L) L = 4pi
-N = 100  x_j = j*L/N  
+u(x) = sin(x) 
+x-(0, L) L = 2pi
+M = 100  x_j = j*L/M  
 */ 
 
-double x_j(int j){
-    return j*4* M_PI / 100;
-}
-
 int main(){
-    int N = 100;
-    double L = 4 * M_PI;
+    int M = 10000;
+    double L = 2 * M_PI;
     
-    double *u_j1 = (double*) fftw_malloc(sizeof(double) * N);
-    double *u_j2 = (double*) fftw_malloc(sizeof(double) * N);
-    fftw_complex *u_k = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
+    double *u_j1 = (double*) fftw_malloc(sizeof(double) * M);
+    double *u_j2 = (double*) fftw_malloc(sizeof(double) * M);
+    double *u_k = (double*) fftw_malloc(sizeof(double) * M);
 
-    for(int j = 0; j < N; j++){
-        u_j1[j] = sin(M_PI * x_j(j));   
+    for(int j = 0; j < M; j++){
+        u_j1[j] = sin(j * L / M);   
     }
 
-    fftw_plan p1 = fftw_plan_dft_r2c_1d(N, u_j1 , u_k , FFTW_ESTIMATE);
+    fftw_plan p1 = fftw_plan_r2r_1d(M, u_j1 , u_k, FFTW_RODFT00, FFTW_ESTIMATE);
     fftw_execute(p1);
-
-    for (int k = 0; k < N; k++) {
-        u_k[k][0] /= N;
-        u_k[k][1] /= N;
+    for(int j = 0; j < M; j++){
+       u_k[j] /= (2*M);   
     }
-
-    fftw_plan p2 = fftw_plan_dft_c2r_1d(N, u_k, u_j2 , FFTW_ESTIMATE);
+    fftw_plan p2 = fftw_plan_r2r_1d(M, u_k, u_j2,  FFTW_RODFT00, FFTW_ESTIMATE);
     fftw_execute(p2);
     // считать норму
     double err = 0.0;
-    for (int j = 0; j < N; j++) {
+    for (int j = 0; j < M; j++) {
+        //cout << u_j1[j]<< " "<< u_k[j] << " "<< u_j2[j]<< endl;
         double err_ = u_j1[j] - u_j2[j];
         err += err_ * err_;
     }
-    err = sqrt(err);
-    printf("||u_j1 - u_j2||_2 = %lf\n", err);
-    fftw_execute(p2);
+    err = sqrt(err *L / M);
+    cout << "||u_j1 - u_j2||_2 = " << err << endl;
     fftw_destroy_plan(p1);
     fftw_destroy_plan(p2);
     fftw_free(u_j1);
