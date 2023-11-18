@@ -1,7 +1,9 @@
+#include <iostream>
 #include <stdio.h>
 #include <math.h>
 #include <fftw3.h>
 
+using namespace std;
 /*
 du/dx(0) = du/dx(1) = 0
 u(x) = cos(x) 
@@ -26,7 +28,7 @@ int main(){
     fftw_execute(p1);
 
     for (int k = 0; k < M; k++) {
-        u_k[k] /=  (2*M);
+        u_k[k] /=  (2*(M-1));
     }
 
     fftw_plan p2 = fftw_plan_r2r_1d(M, u_k, u_j2,  FFTW_REDFT00, FFTW_ESTIMATE);
@@ -38,7 +40,7 @@ int main(){
         err += err_ * err_;
     }
     err = sqrt(err * L / M);
-    printf("||u_j1 - u_j2||_2 = %lf\n", err);
+    cout << "||u_j1 - u_j2||_2 = " << err << endl;
     fftw_execute(p2);
     fftw_destroy_plan(p1);
     fftw_destroy_plan(p2);
