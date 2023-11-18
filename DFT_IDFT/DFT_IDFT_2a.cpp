@@ -12,7 +12,7 @@ M = 100  x_j = j*L/M
 */ 
 
 int main(){
-    int M = 10000;
+    int M = 5000;
     double L = 2 * M_PI;
     
     double *u_j1 = (double*) fftw_malloc(sizeof(double) * M);
@@ -26,7 +26,7 @@ int main(){
     fftw_plan p1 = fftw_plan_r2r_1d(M, u_j1 , u_k, FFTW_RODFT00, FFTW_ESTIMATE);
     fftw_execute(p1);
     for(int j = 0; j < M; j++){
-       u_k[j] /= (2*M);   
+       u_k[j] /= (2*(M+1));   
     }
     fftw_plan p2 = fftw_plan_r2r_1d(M, u_k, u_j2,  FFTW_RODFT00, FFTW_ESTIMATE);
     fftw_execute(p2);
