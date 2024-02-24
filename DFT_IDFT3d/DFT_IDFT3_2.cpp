@@ -23,86 +23,53 @@ int main() {
     fftw_plan plan1, plan2, plan3;
     int i, j, k, index;
 
-    double *in_x = (double*) fftw_malloc(sizeof(double) * nx * ny * nz);
-    double *in_y = (double*) fftw_malloc(sizeof(double) * nx * ny * nz);
-    double *in_z = (double*) fftw_malloc(sizeof(double) * nx * ny * nz);
-    double *out_x = (double*) fftw_malloc(sizeof(double) * nx * ny * nz);
-    double *out_y = (double*) fftw_malloc(sizeof(double) * nx * ny * nz);
-    double *out_z = (double*) fftw_malloc(sizeof(double) * nx * ny * nz);
-    fftw_complex *in_complex_x = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nx * ny * (nz / 2 + 1));
-    fftw_complex *in_complex_y = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nx * ny * (nz / 2 + 1));
-    fftw_complex *in_complex_z = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nx * ny * (nz / 2 + 1));
+    double *re = (double*) fftw_malloc(sizeof(double) * nx * ny * nz);
+    fftw_complex *complex_x = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nz * ny * (nx / 2 + 1));
+    fftw_complex *complex_y = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nx * nz * (ny / 2 + 1));
+    fftw_complex *complex_z = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nx * ny * (nz / 2 + 1));
+    double * out_x = (double*) fftw_malloc(sizeof(double) * nx * ny * nz);
+    double * out_y = (double*) fftw_malloc(sizeof(double) * nx * ny * nz);
+    double * out_z = (double*) fftw_malloc(sizeof(double) * nx * ny * nz);
 
     for (i = 0; i < nx; i++) {
         for (j = 0; j < ny; j++) {
             for (k = 0; k < nz; k++) {
-                in_z[(i*ny + j)*nz + k] = sin(4.0 * i * L / nx) * cos(5.0 * j * L / nx) * sin(3.0 * k * L / nx);
+                re[(i*ny + j)*nz + k] = sin(4.0 * i * L / nx) * cos(5.0 * j * L / nx) * sin(3.0 * k * L / nx);
             }
         }
     }
 
-    for (i = 0; i < nx; i++) {
-        for (j = 0; j < ny; j++) {
-            for (k = 0; k < nz; k++) {
-                in_x[(i*ny + j)*nz + k] = in_z[(k*ny + j)*nz + i];
-                in_y[(i*ny + j)*nz + k] = in_z[(i*ny + k)*nz + j];
-            }
-        }
-    }
-
-    plan1 = fftw_plan_dft_r2c_3d(nz, ny, nx, in_x, in_complex_x, FFTW_ESTIMATE);
-    plan2 = fftw_plan_dft_r2c_3d(nx, nz, ny, in_y, in_complex_y, FFTW_ESTIMATE);
-    plan3 = fftw_plan_dft_r2c_3d(nx, ny, nz, in_z, in_complex_z, FFTW_ESTIMATE);
+    plan1 = fftw_plan_dft_r2c_3d(nx, ny, nz, re, complex_z, FFTW_ESTIMATE);
 
     fftw_execute(plan1);
-    fftw_execute(plan2);
-    fftw_execute(plan3);
 
     for (i = 0; i < nx; i++) {
         for (j = 0; j < ny; j++) {
             for (k = 0; k < (nz / 2 + 1); k++) {
                 index = (i * ny + j) * (nz / 2 + 1) + k;
-                in_complex_x[index][0] /= (nx * ny * nz);
-                in_complex_x[index][1] /= (nx * ny * nz);
-                double real = in_complex_x[index][1] * k * (-1) ;
-                double imaginary = in_complex_x[index][0] * k ;
-                in_complex_x[index][0] = real;
-                in_complex_x[index][1] = imaginary;
+                complex_z[index][0] /= (nx * ny * nz);
+                complex_z[index][1] /= (nx * ny * nz);
+                double real_z = complex_z[index][1] * k * k * (-1);
+                double imaginary_z = complex_z[index][0] * k * k * (-1);
+                double k_x = i <= nx/2 ? i : i -nx;
+                double k_y = j <= ny/2 ? j : j -ny;
+                double real_x = complex_z[index][1] * k_x * k_x * (-1);
+                double imaginary_x = complex_z[index][0] * k_x * k_x * (-1);
+                double real_y = complex_z[index][1] * k_y * k_y * (-1);
+                double imaginary_y = complex_z[index][0] * k_y * k_y * (-1);
+                complex_x[index][0] = imaginary_x;
+                complex_x[index][1] = real_x;
+                complex_y[index][0] = imaginary_y;
+                complex_y[index][1] = real_y;
+                complex_z[index][0] = imaginary_z;
+                complex_z[index][1] = real_z;
             }
         }
     }
 
-    for (i = 0; i < nx; i++) {
-        for (j = 0; j < ny; j++) {
-            for (k = 0; k < (nz / 2 + 1); k++) {
-                index = (i * ny + j) * (nz / 2 + 1) + k;
-                in_complex_y[index][0] /= (nx * ny * nz);
-                in_complex_y[index][1] /= (nx * ny * nz);
-                double real = in_complex_y[index][1] * k * (-1) ;
-                double imaginary = in_complex_y[index][0] * k ;
-                in_complex_y[index][0] = real;
-                in_complex_y[index][1] = imaginary;
-            }
-        }
-    }
-
-    for (i = 0; i < nx; i++) {
-        for (j = 0; j < ny; j++) {
-            for (k = 0; k < (nz / 2 + 1); k++) {
-                index = (i * ny + j) * (nz / 2 + 1) + k;
-                in_complex_z[index][0] /= (nx * ny * nz);
-                in_complex_z[index][1] /= (nx * ny * nz);
-                double real = in_complex_z[index][1] * k * k * (-1);
-                double imaginary = in_complex_z[index][0] * k * k * (-1);
-                in_complex_z[index][0] = imaginary;
-                in_complex_z[index][1] = real;
-            }
-        }
-    }
-
-    plan1 = fftw_plan_dft_c2r_3d(nz, ny, nx, in_complex_x, out_x, FFTW_ESTIMATE);
-    plan2 = fftw_plan_dft_c2r_3d(nx, nz, ny, in_complex_y, out_y, FFTW_ESTIMATE);
-    plan3 = fftw_plan_dft_c2r_3d(nx, ny, nz, in_complex_z, out_z, FFTW_ESTIMATE);
+    plan1 = fftw_plan_dft_c2r_3d(nz, ny, nx, complex_x, out_x, FFTW_ESTIMATE);
+    plan2 = fftw_plan_dft_c2r_3d(nz, ny, nx, complex_y, out_y, FFTW_ESTIMATE);
+    plan3 = fftw_plan_dft_c2r_3d(nz, ny, nx, complex_z, out_z, FFTW_ESTIMATE);
 
     fftw_execute(plan1);
     fftw_execute(plan2);
@@ -112,8 +79,8 @@ int main() {
     for (i = 0; i < nx; i++) {
         for (j = 0; j < ny; j++) {
             for (k = 0; k < nz; k++) {
-                double du_dx =  4 * cos(4.0 * k * L / nx) * cos(5.0 * j * L / ny) * sin(3.0 * i * L / nz);
-                double du_dy =  -5 * sin(4.0 * i * L / nx) * sin(5.0 * k * L / ny) * sin(3.0 * j * L / nz);
+                double du_dx = -16 * sin(4.0 * i * L / nx) * cos(5.0 * j * L / ny) * sin(3.0 * k * L / nz);
+                double du_dy = -25 * sin(4.0 * i * L / nx) * cos(5.0 * j * L / ny) * sin(3.0 * k * L / nz);
                 double du_dz = -9 * sin(4.0 * i * L / nx) * cos(5.0 * j * L / nx) * sin(3.0 * k * L / nx);
                 //cout << out[(i * ny + j) * nz + k] << " " << du_dz << endl;
                 double err_x_ = fabs(out_x[(i * ny + j) * nz + k] - du_dx);
@@ -133,15 +100,8 @@ int main() {
     fftw_destroy_plan(plan3);
     fftw_destroy_plan(plan2);
     fftw_destroy_plan(plan1);
-    fftw_free(in_x);
-    fftw_free(in_y);
-    fftw_free(in_z);
     fftw_free(out_x);
     fftw_free(out_y);
     fftw_free(out_z);
-    fftw_free(in_complex_x);
-    fftw_free(in_complex_y);
-    fftw_free(in_complex_z);
     return 0;
 }
-
