@@ -119,7 +119,7 @@ int main() {
         for (j = 0; j < ny; j++) {
             for (k = 0; k < nz; k++) {
                 double res = (1 +  1) * sin(4.0 * i * L / nx) * cos(5.0 * j * L / ny) * sin(3.0 * k * L / nz);
-                cout << u[(i * ny + j) * nz + k] << " " << res << endl;
+                //cout << u[(i * ny + j) * nz + k] << " " << res << endl;
                 double err_x_ = fabs(u[(i * ny + j) * nz + k] - res);
                 err_x += err_x_ * err_x_;
             }
