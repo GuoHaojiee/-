@@ -61,7 +61,7 @@ int main() {
     for(int i = 0; i < N1; ++i) {
         for(int j = 0; j < N2; ++j) {
             for(int k = 0; k < n3; ++k) {
-                //cout << i << " " << j << " " << k << " " << ino[(i*N2+j)*n3+k]<< endl;
+                cout << i << " " << j << " " << k << " " << ino[(i*N2+j)*n3+k]<< endl;
             }
         }
     }
@@ -91,7 +91,7 @@ int main() {
     for(int i = 0; i < N1; ++i) {
         for(int j = 0; j < (N2/2+1); ++j) {
             for(int k = 0; k < n3; ++k) {
-                //cout << i << " " << j << " " << k << " " << out[(i * n2 + j) * n3 + k][0] << " " << out[(i * n2 + j) * n3 + k][1] << endl;
+                //cout << i << " " << j << " " << k << " " << out[(i * N2 + j) * n3 + k][0] << " " << out[(i * N2 + j) * n3 + k][1] << endl;
             }
         }
     }
