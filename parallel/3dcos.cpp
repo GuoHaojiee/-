@@ -100,6 +100,7 @@ void Teplo_2(fftw_complex* u_start, fftw_complex* u_out, fftw_complex* F_complex
 
 double err_calculation(const double* n1, const  double* n2, int size){
     double err = 0.0;
+    #pragma omp parallel for
     for (int i = 0; i < size; ++i) {
         double err_ = fabs(n1[i] - n2[i]);
         err += err_ * err_;
