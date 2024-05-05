@@ -1,0 +1,171 @@
+mpisubmit.pl -p 1 -t 8 ./a.out -d 运行1处理器 8线程a.out
+bjobs -a 查看任务
+bjobs -a
+g++ 3d.cpp -lfftw3 -lfftw3_omp -fopenmp 编译文件
+mpisubmit.pl -p 1 -t 8 ./a.out -d > omp.lsf vim omp.lsf 自定义lsf文件
+bsub < omp.lsf 运行命令lsf文件
+bhosts
+bkill 1169887 结束出错的程序 id 1169887
+scp -i /home/guohaojie/.ssh/id_rsa_hpc 3d.cpp edu-cmc-sqi23-01@polus.cs.msu.ru:~/openmp 
+
+67.3819s
+
+import matplotlib.pyplot as plt
+
+t0 = 458.53
+num =  [1, 2, 4, 8, 16]
+times = [458.53, 229.53, 115.75, 60.41, 33.40]  # 运行时间
+speedup = [t0 / time for time in times]  # 计算加速度
+
+# 绘图
+plt.figure(figsize=(10, 6))  # 设置图的尺寸
+plt.plot(num, speedup, marker='o', linestyle='-', color='blue')  # 绘制线图
+plt.title('Ускорение относительно числа нитей')  # 图的标题
+plt.xlabel('Число нитей')  # X轴标签
+plt.ylabel('Ускорение')  # Y轴标签
+plt.grid(True)  # 显示网格
+plt.xticks(num)  # 确保所有线程数量都标记在X轴上
+
+# 显示图表
+plt.show()
+
+
+import matplotlib.pyplot as plt
+
+
+rows = ['Nx, Ny, Nz, Nt','Число нитей','Время(s)', 'Ускорение']
+
+# 初始运行时间
+girds = [1, 2, 4, 8, 1]
+# 初始运行时间
+t0 = 458.53
+num =  [1, 2, 4, 8, 16]
+times = [458.53, 229.53, 115.75, 60.41, 33.40]  # 运行时间
+speedup = [t0 / time for time in times]  # 计算加速度
+
+# 构造表格数据，加入了行标题作为每行的第一个元素
+data = [
+    [n for n in num],
+    ['%.3fs' % t for t in times],  # 时间字符串格式化
+    ['%.2f' % s for s in speedup],  # 加速度格式化
+]
+
+
+
+# 绘制表格，不需要转置数据
+fig, ax = plt.subplots()
+ax.axis('off')  # 关闭坐标轴
+table = ax.table(
+    cellText=data,  # 不转置数据
+    rowLabels=rows,
+    loc='center',
+    cellLoc='center'
+)
+
+table.auto_set_font_size(True)
+table.scale(1, 2)  # 调整表格大小
+plt.title("Время и ускорение")
+plt.show()
+
+cos
+33.00, 33.40, 30.74, 30.87, 30.65  - 31.732
+60.43, 60.37, 60.41, 59.55, 59.60  - 60.072
+120.69, 120.45, 120.30, 115.75, 116.17 -118.672
+234.22, 235.65, 234.44, 234.43, 233.55 -234.458
+
+sin
+31.00, 31.10, 31.20, 30.47, 30.03
+59.70, 61.94, 61.12, 61.45, 
+117.85, 119.07, 115.90, 118.88
+234.80, 234.72, 234.6
+
+
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+
+# 原始数据
+t0 = 458.70
+num = [1, 2, 4, 8, 16]
+times = [458.70, 234.70, 117.925, 61.05, 30.76]  # 运行时间
+speedup = [t0 / time for time in times]  # 计算加速度
+data = [
+    [str(n) for n in num],  # 将数字转换为字符串以便格式化
+    ['%.3fs' % t for t in times],
+    ['%.2f' % s for s in speedup],
+]
+rows = ['Число нитей','Время(s)', 'Ускорение']
+
+# 设定图形和网格布局: 左边70%用于绘图，右边30%用于表格
+fig = plt.figure(figsize=(14, 6))
+gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1])
+
+# 左侧绘图区域
+ax0 = plt.subplot(gs[0])
+ax0.plot(num, speedup, marker='o', linestyle='-', color='blue')
+ax0.set_title('Ускорение относительно числа нитей для 3dsin')
+ax0.set_xlabel('Число нитей')
+ax0.set_ylabel('Ускорение')
+ax0.grid(True)
+ax0.set_xticks(num)
+
+# 右侧表格区域
+ax1 = plt.subplot(gs[1])
+ax1.axis('off')  # 关闭坐标轴，因为我们只显示表格
+table = ax1.table(
+    cellText=data,
+    rowLabels=rows,
+    loc='center',
+    cellLoc='center'
+)
+table.auto_set_font_size(True)
+table.scale(1, 2)  # 调整表格大小
+
+plt.tight_layout()
+plt.show()
+
+
+
+
+
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+
+# 原始数据
+t0 = 458.22
+num = [1, 2, 4, 8, 16]
+times = [458.22, 234.458, 118.672, 60.072, 31.732]  # 运行时间
+speedup = [t0 / time for time in times]  # 计算加速度
+data = [
+    [str(n) for n in num],  # 将数字转换为字符串以便格式化
+    ['%.3fs' % t for t in times],
+    ['%.2f' % s for s in speedup],
+]
+rows = ['Число нитей','Время(s)', 'Ускорение']
+
+# 设定图形和网格布局: 左边70%用于绘图，右边30%用于表格
+fig = plt.figure(figsize=(14, 6))
+gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1])
+
+# 左侧绘图区域
+ax0 = plt.subplot(gs[0])
+ax0.plot(num, speedup, marker='o', linestyle='-', color='blue')
+ax0.set_title('Ускорение относительно числа нитей для 3dcos')
+ax0.set_xlabel('Число нитей')
+ax0.set_ylabel('Ускорение')
+ax0.grid(True)
+ax0.set_xticks(num)
+
+# 右侧表格区域
+ax1 = plt.subplot(gs[1])
+ax1.axis('off')  # 关闭坐标轴，因为我们只显示表格
+table = ax1.table(
+    cellText=data,
+    rowLabels=rows,
+    loc='center',
+    cellLoc='center'
+)
+table.auto_set_font_size(True)
+table.scale(1, 2)  # 调整表格大小
+
+plt.tight_layout()
+plt.show()
