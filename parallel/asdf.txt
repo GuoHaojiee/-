@@ -1,3 +1,6 @@
+gcc -v 查看版本
+scl enable devtoolset-7 bash 
+
 mpisubmit.pl -p 1 -t 8 ./a.out -d 运行1处理器 8线程a.out
 bjobs -a 查看任务
 bjobs -a
