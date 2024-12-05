@@ -9,6 +9,158 @@
 
 using namespace std;
 
+// Глобальные переменные
+fftw_plan plan_fwd_r2r_cos;
+fftw_plan plan_fwd_r2c_cos;
+fftw_plan plan_bwd_c2r_cos;
+fftw_plan plan_bwd_r2r_cos;
+
+fftw_plan plan_fwd_r2r_sin;
+fftw_plan plan_fwd_r2c_sin;
+fftw_plan plan_bwd_c2r_sin;
+fftw_plan plan_bwd_r2r_sin;
+
+double *in;
+double *in_z;
+fftw_complex *complex_out;
+double *re_out_xy;
+double *re_out;
+
+void initialize_fwd_r2r_cos(int nx, int ny, int nz1, int nz2) 
+{   
+    //Forward transformation для cos r2r
+    int rank = 1;
+    int n_cos[] = {nz1};
+    int n_sin[] = {nz2};
+    int howmany = nx * ny;
+    int istride_cos = 1, ostride_cos = 1;
+    int idist_cos = nz1, odist_cos = nz1;
+    int *inembed_cos = n_cos, *onembed_cos = n_cos;
+    const fftw_r2r_kind kind_cos[] = {FFTW_REDFT00};
+    plan_fwd_r2r_cos = fftw_plan_many_r2r(rank, n_cos, howmany,
+                            in, inembed_cos, istride_cos, idist_cos,
+                            in_z, onembed_cos, ostride_cos, odist_cos,
+                            kind_cos, FFTW_ESTIMATE);
+}
+
+void initialize_fwd_r2r_sin(int nx, int ny, int nz1, int nz2) 
+{   
+    //Forward transformation для sin r2r
+    int rank = 1;
+    int n_sin[] = {nz2};
+    int howmany = nx * ny;
+    int istride_sin = 1, ostride_sin = 1;
+    int idist_sin = nz2, odist_sin = nz2;
+    int *inembed_sin = n_sin, *onembed_sin = n_sin;
+    const fftw_r2r_kind kind_sin[] = {FFTW_RODFT00};
+
+    plan_fwd_r2r_sin = fftw_plan_many_r2r(rank, n_sin, howmany,
+                            in, inembed_sin, istride_sin, idist_sin,
+                            in_z, onembed_sin, ostride_sin, odist_sin,
+                            kind_sin, FFTW_ESTIMATE);
+}
+
+void initialize_fwd_r2c_cos(int nx, int ny, int nz1, int nz2) 
+{ 
+    int nn[] = {nx, ny};
+    int inembed2[] =  {nx, ny};
+    int onembed2[] =  {nx, ny/2+1};
+    int istride_cos = nz1, ostride_cos = nz1;
+    int idist_cos = 1, odist_cos = 1;
+
+    plan_fwd_r2c_cos = fftw_plan_many_dft_r2c(2, nn, nz1,
+                                in_z, inembed2, istride_cos, idist_cos,
+                                complex_out, onembed2,  ostride_cos, odist_cos,
+                                FFTW_ESTIMATE);
+}
+
+void initialize_fwd_r2c_sin(int nx, int ny, int nz1, int nz2) 
+{ 
+    int nn[] = {nx, ny};
+    int inembed2[] =  {nx, ny};
+    int onembed2[] =  {nx, ny/2+1};
+    int istride_sin = nz2, ostride_sin = nz2;
+    int idist_sin = 1, odist_sin = 1;
+
+    plan_fwd_r2c_sin = fftw_plan_many_dft_r2c(2, nn, nz2,
+                                in_z, inembed2, istride_sin, idist_sin,
+                                complex_out, onembed2, ostride_sin, odist_sin,
+                                FFTW_ESTIMATE); 
+}
+
+void initialize_bwd_c2r_cos(int nx, int ny, int nz1, int nz2) 
+{ 
+    //Backward transformation для cos c2r
+    int nn[] = {nx, ny};
+    int inembed4[] =  {nx, (ny/2+1)};
+    int onembed4[] =  {nx, ny};
+    int istride_cos = nz1, ostride_cos = nz1;
+    int idist_cos = 1, odist_cos = 1;
+
+    plan_bwd_c2r_cos = fftw_plan_many_dft_c2r(2, nn, nz1,
+                                complex_out, inembed4,istride_cos, idist_cos,
+                                re_out_xy, onembed4,  ostride_cos, odist_cos,
+                                FFTW_ESTIMATE);
+}
+
+void initialize_bwd_c2r_sin(int nx, int ny, int nz1, int nz2) 
+{ 
+    //Backward transformation для sin c2r
+    int nn[] = {nx, ny};
+    int inembed4[] =  {nx, (ny/2+1)};
+    int onembed4[] =  {nx, ny};
+    int istride_sin = nz2, ostride_sin = nz2;
+    int idist_sin = 1, odist_sin = 1;
+    plan_bwd_c2r_sin = fftw_plan_many_dft_c2r(2, nn, nz2,
+                                complex_out, inembed4, istride_sin, idist_sin,
+                                re_out_xy, onembed4, ostride_sin, odist_sin,
+                                FFTW_ESTIMATE);
+}
+
+void initialize_bwd_r2r_cos(int nx, int ny, int nz1, int nz2) 
+{ 
+    int rank = 1;
+    int n_cos[] = {nz1};
+    int howmany = nx * ny;
+    int istride_cos = 1, ostride_cos = 1;
+    int idist_cos = nz1, odist_cos = nz1;
+    int *inembed3_cos = n_cos, *onembed3_cos = n_cos;
+    const fftw_r2r_kind kind_cos[] = {FFTW_REDFT00};
+
+    plan_bwd_r2r_cos = fftw_plan_many_r2r(rank, n_cos, howmany,
+                              re_out_xy, inembed3_cos,istride_cos, idist_cos,
+                              re_out, onembed3_cos,  ostride_cos, odist_cos,
+                              kind_cos, FFTW_ESTIMATE);
+}
+
+void initialize_bwd_r2r_sin(int nx, int ny, int nz1, int nz2) 
+{ 
+    int rank = 1;
+    int n_sin[] = {nz2};
+    int howmany = nx * ny;
+    int istride_sin = 1, ostride_sin = 1;
+    int idist_sin = nz2, odist_sin = nz2;
+    int *inembed3_sin = n_sin, *onembed3_sin = n_sin;
+    const fftw_r2r_kind kind_sin[] = {FFTW_RODFT00};
+
+    plan_bwd_r2r_sin = fftw_plan_many_r2r(rank, n_sin, howmany,
+                              re_out_xy, inembed3_sin, istride_sin, idist_sin,
+                              re_out, onembed3_sin, ostride_sin, odist_sin,
+                              kind_sin, FFTW_ESTIMATE);
+}
+
+void finalize_fft_plans() {
+    fftw_destroy_plan(plan_fwd_r2r_cos);
+    fftw_destroy_plan(plan_fwd_r2c_cos);
+    fftw_destroy_plan(plan_bwd_c2r_cos);
+    fftw_destroy_plan(plan_bwd_r2r_cos);
+
+    fftw_destroy_plan(plan_fwd_r2r_sin);
+    fftw_destroy_plan(plan_fwd_r2c_sin);
+    fftw_destroy_plan(plan_bwd_c2r_sin);
+    fftw_destroy_plan(plan_bwd_r2r_sin);
+}
+
 double func_V1(double x, double y, double z, double t) {
     return (t*t+1)*exp(sin(3*x+3*y))*cos(6*z);
 }
@@ -196,6 +348,7 @@ void make_div_0(fftw_complex* V1_, fftw_complex* V2_, fftw_complex* V3_, fftw_co
     int i, j, k,k_x,k_y,k_z,index1,index2;
     double alpha = 2*M_PI/L_z;
     compute_div(V1_,V2_,V3_,div_,nx,ny,nz1,nz2,L_x,L_y,L_z);
+
     #pragma omp parallel for
     for(int i = 0; i < nx; ++i) {
         for(int j = 0; j < (ny/2+1); ++j) {
@@ -247,157 +400,7 @@ void make_div_0(fftw_complex* V1_, fftw_complex* V2_, fftw_complex* V3_, fftw_co
     }
 }
 
-// Глобальные переменные
-fftw_plan plan_fwd_r2r_cos;
-fftw_plan plan_fwd_r2c_cos;
-fftw_plan plan_bwd_c2r_cos;
-fftw_plan plan_bwd_r2r_cos;
 
-fftw_plan plan_fwd_r2r_sin;
-fftw_plan plan_fwd_r2c_sin;
-fftw_plan plan_bwd_c2r_sin;
-fftw_plan plan_bwd_r2r_sin;
-
-double *in;
-double *in_z;
-fftw_complex *complex_out;
-double *re_out_xy;
-double *re_out;
-
-void initialize_fwd_r2r_cos(int nx, int ny, int nz1, int nz2) 
-{   
-    //Forward transformation для cos r2r
-    int rank = 1;
-    int n_cos[] = {nz1};
-    int n_sin[] = {nz2};
-    int howmany = nx * ny;
-    int istride_cos = 1, ostride_cos = 1;
-    int idist_cos = nz1, odist_cos = nz1;
-    int *inembed_cos = n_cos, *onembed_cos = n_cos;
-    const fftw_r2r_kind kind_cos[] = {FFTW_REDFT00};
-    plan_fwd_r2r_cos = fftw_plan_many_r2r(rank, n_cos, howmany,
-                            in, inembed_cos, istride_cos, idist_cos,
-                            in_z, onembed_cos, ostride_cos, odist_cos,
-                            kind_cos, FFTW_ESTIMATE);
-}
-
-void initialize_fwd_r2r_sin(int nx, int ny, int nz1, int nz2) 
-{   
-    //Forward transformation для sin r2r
-    int rank = 1;
-    int n_sin[] = {nz2};
-    int howmany = nx * ny;
-    int istride_sin = 1, ostride_sin = 1;
-    int idist_sin = nz2, odist_sin = nz2;
-    int *inembed_sin = n_sin, *onembed_sin = n_sin;
-    const fftw_r2r_kind kind_sin[] = {FFTW_RODFT00};
-
-    plan_fwd_r2r_sin = fftw_plan_many_r2r(rank, n_sin, howmany,
-                            in, inembed_sin, istride_sin, idist_sin,
-                            in_z, onembed_sin, ostride_sin, odist_sin,
-                            kind_sin, FFTW_ESTIMATE);
-}
-
-void initialize_fwd_r2c_cos(int nx, int ny, int nz1, int nz2) 
-{ 
-    int nn[] = {nx, ny};
-    int inembed2[] =  {nx, ny};
-    int onembed2[] =  {nx, ny/2+1};
-    int istride_cos = nz1, ostride_cos = nz1;
-    int idist_cos = 1, odist_cos = 1;
-
-    plan_fwd_r2c_cos = fftw_plan_many_dft_r2c(2, nn, nz1,
-                                in_z, inembed2, istride_cos, idist_cos,
-                                complex_out, onembed2,  ostride_cos, odist_cos,
-                                FFTW_ESTIMATE);
-}
-
-void initialize_fwd_r2c_sin(int nx, int ny, int nz1, int nz2) 
-{ 
-    int nn[] = {nx, ny};
-    int inembed2[] =  {nx, ny};
-    int onembed2[] =  {nx, ny/2+1};
-    int istride_sin = nz2, ostride_sin = nz2;
-    int idist_sin = 1, odist_sin = 1;
-
-    plan_fwd_r2c_sin = fftw_plan_many_dft_r2c(2, nn, nz2,
-                                in_z, inembed2, istride_sin, idist_sin,
-                                complex_out, onembed2, ostride_sin, odist_sin,
-                                FFTW_ESTIMATE); 
-}
-
-void initialize_bwd_c2r_cos(int nx, int ny, int nz1, int nz2) 
-{ 
-    //Backward transformation для cos c2r
-    int nn[] = {nx, ny};
-    int inembed4[] =  {nx, (ny/2+1)};
-    int onembed4[] =  {nx, ny};
-    int istride_cos = nz1, ostride_cos = nz1;
-    int idist_cos = 1, odist_cos = 1;
-
-    plan_bwd_c2r_cos = fftw_plan_many_dft_c2r(2, nn, nz1,
-                                complex_out, inembed4,istride_cos, idist_cos,
-                                re_out_xy, onembed4,  ostride_cos, odist_cos,
-                                FFTW_ESTIMATE);
-}
-
-void initialize_bwd_c2r_sin(int nx, int ny, int nz1, int nz2) 
-{ 
-    //Backward transformation для sin c2r
-    int nn[] = {nx, ny};
-    int inembed4[] =  {nx, (ny/2+1)};
-    int onembed4[] =  {nx, ny};
-    int istride_sin = nz2, ostride_sin = nz2;
-    int idist_sin = 1, odist_sin = 1;
-    plan_bwd_c2r_sin = fftw_plan_many_dft_c2r(2, nn, nz2,
-                                complex_out, inembed4, istride_sin, idist_sin,
-                                re_out_xy, onembed4, ostride_sin, odist_sin,
-                                FFTW_ESTIMATE);
-}
-
-void initialize_bwd_r2r_cos(int nx, int ny, int nz1, int nz2) 
-{ 
-    int rank = 1;
-    int n_cos[] = {nz1};
-    int howmany = nx * ny;
-    int istride_cos = 1, ostride_cos = 1;
-    int idist_cos = nz1, odist_cos = nz1;
-    int *inembed3_cos = n_cos, *onembed3_cos = n_cos;
-    const fftw_r2r_kind kind_cos[] = {FFTW_REDFT00};
-
-    plan_bwd_r2r_cos = fftw_plan_many_r2r(rank, n_cos, howmany,
-                              re_out_xy, inembed3_cos,istride_cos, idist_cos,
-                              re_out, onembed3_cos,  ostride_cos, odist_cos,
-                              kind_cos, FFTW_ESTIMATE);
-}
-
-void initialize_bwd_r2r_sin(int nx, int ny, int nz1, int nz2) 
-{ 
-    int rank = 1;
-    int n_sin[] = {nz2};
-    int howmany = nx * ny;
-    int istride_sin = 1, ostride_sin = 1;
-    int idist_sin = nz2, odist_sin = nz2;
-    int *inembed3_sin = n_sin, *onembed3_sin = n_sin;
-    const fftw_r2r_kind kind_sin[] = {FFTW_RODFT00};
-
-    plan_bwd_r2r_sin = fftw_plan_many_r2r(rank, n_sin, howmany,
-                              re_out_xy, inembed3_sin, istride_sin, idist_sin,
-                              re_out, onembed3_sin, ostride_sin, odist_sin,
-                              kind_sin, FFTW_ESTIMATE);
-}
-
-void finalize_fft_plans() {
-    fftw_destroy_plan(plan_fwd_r2r_cos);
-    fftw_destroy_plan(plan_fwd_r2c_cos);
-    fftw_destroy_plan(plan_bwd_c2r_cos);
-    fftw_destroy_plan(plan_bwd_r2r_cos);
-
-    fftw_destroy_plan(plan_fwd_r2r_sin);
-    fftw_destroy_plan(plan_fwd_r2c_sin);
-    fftw_destroy_plan(plan_bwd_c2r_sin);
-    fftw_destroy_plan(plan_bwd_r2r_sin);
-}
 
 void compute_v_cross_rot(fftw_complex* V1_c, fftw_complex *V2_c, fftw_complex *V3_c
                         ,double *V1_r, double *V2_r, double *V3_r
@@ -412,24 +415,16 @@ void compute_v_cross_rot(fftw_complex* V1_c, fftw_complex *V2_c, fftw_complex *V
 {   
     int index1,index2;
     compute_rot(V1_c, V2_c, V3_c, rotv1_c, rotv2_c, rotv3_c, nx, ny, Nz,L_x,L_y,L_z);
+
     // backward fft for rotV
-    complex_out = rotv1_c; re_out_xy = rotv1_xy_r; re_out = rotv1_r;
-    initialize_bwd_c2r_sin(nx, ny, nz1, nz2);   
-    initialize_bwd_r2r_sin(nx, ny, nz1, nz2); 
-    fftw_execute(plan_bwd_c2r_sin);
-    fftw_execute(plan_bwd_r2r_sin);
+    fftw_execute_dft_c2r(plan_bwd_c2r_sin,rotv1_c,rotv1_xy_r);
+    fftw_execute_r2r(plan_bwd_r2r_sin, rotv1_xy_r, rotv1_r);
 
-    complex_out = rotv2_c; re_out_xy = rotv2_xy_r; re_out = rotv2_r;
-    initialize_bwd_c2r_sin(nx, ny, nz1, nz2);   
-    initialize_bwd_r2r_sin(nx, ny, nz1, nz2); 
-    fftw_execute(plan_bwd_c2r_sin);
-    fftw_execute(plan_bwd_r2r_sin);
-
-    complex_out = rotv3_c; re_out_xy = rotv3_xy_r; re_out = rotv3_r;
-    initialize_bwd_c2r_cos(nx, ny, nz1, nz2);   
-    initialize_bwd_r2r_cos(nx, ny, nz1, nz2);  
-    fftw_execute(plan_bwd_c2r_cos);
-    fftw_execute(plan_bwd_r2r_cos);
+    fftw_execute_dft_c2r(plan_bwd_c2r_sin,rotv2_c,rotv2_xy_r);
+    fftw_execute_r2r(plan_bwd_r2r_sin, rotv2_xy_r, rotv2_r);
+    
+    fftw_execute_dft_c2r(plan_bwd_c2r_cos,rotv3_c,rotv3_xy_r);
+    fftw_execute_r2r(plan_bwd_r2r_cos, rotv3_xy_r, rotv3_r);
 
     #pragma omp parallel for
     for (int i = 0; i < nx; ++i){
@@ -450,23 +445,14 @@ void compute_v_cross_rot(fftw_complex* V1_c, fftw_complex *V2_c, fftw_complex *V
     }
 
     // backward fft for V
-    complex_out = v_cross_rot1_c; re_out_xy = V1_xy_r; re_out = V1_r;
-    initialize_bwd_c2r_cos(nx, ny, nz1, nz2);   
-    initialize_bwd_r2r_cos(nx, ny, nz1, nz2);  
-    fftw_execute(plan_bwd_c2r_cos);
-    fftw_execute(plan_bwd_r2r_cos);
+    fftw_execute_dft_c2r(plan_bwd_c2r_cos,v_cross_rot1_c,V1_xy_r);
+    fftw_execute_r2r(plan_bwd_r2r_cos, V1_xy_r, V1_r);
 
-    complex_out = v_cross_rot2_c; re_out_xy = V2_xy_r; re_out = V2_r;
-    initialize_bwd_c2r_cos(nx, ny, nz1, nz2);   
-    initialize_bwd_r2r_cos(nx, ny, nz1, nz2);  
-    fftw_execute(plan_bwd_c2r_cos);
-    fftw_execute(plan_bwd_r2r_cos);
+    fftw_execute_dft_c2r(plan_bwd_c2r_cos,v_cross_rot2_c,V2_xy_r);
+    fftw_execute_r2r(plan_bwd_r2r_cos, V2_xy_r, V2_r);
     
-    complex_out = v_cross_rot3_c; re_out_xy = V3_xy_r; re_out = V3_r;
-    initialize_bwd_c2r_sin(nx, ny, nz1, nz2);   
-    initialize_bwd_r2r_sin(nx, ny, nz1, nz2); 
-    fftw_execute(plan_bwd_c2r_sin);
-    fftw_execute(plan_bwd_r2r_sin);
+    fftw_execute_dft_c2r(plan_bwd_c2r_sin,v_cross_rot3_c,V3_xy_r);
+    fftw_execute_r2r(plan_bwd_r2r_sin, V3_xy_r, V3_r);
 
     #pragma omp parallel for
     for (int i = 0; i < nx; i++) {
@@ -490,23 +476,14 @@ void compute_v_cross_rot(fftw_complex* V1_c, fftw_complex *V2_c, fftw_complex *V
     }
     // Forward transformation  
     // Сделал fft для V x rotV, 
-    in = v_cross_rot1_r; in_z = v_cross_rot1_z_r; complex_out = v_cross_rot1_c;
-    initialize_fwd_r2r_cos(nx, ny, nz1, nz2);   
-    initialize_fwd_r2c_cos(nx, ny, nz1, nz2);    
-    fftw_execute(plan_fwd_r2r_cos);
-    fftw_execute(plan_fwd_r2c_cos);
+    fftw_execute_r2r(plan_fwd_r2r_cos, v_cross_rot1_r, v_cross_rot1_z_r);
+    fftw_execute_dft_r2c(plan_fwd_r2c_cos, v_cross_rot1_z_r, v_cross_rot1_c);
 
-    in = v_cross_rot2_r; in_z = v_cross_rot2_z_r; complex_out = v_cross_rot2_c;
-    initialize_fwd_r2r_cos(nx, ny, nz1, nz2);   
-    initialize_fwd_r2c_cos(nx, ny, nz1, nz2); 
-    fftw_execute(plan_fwd_r2r_cos);
-    fftw_execute(plan_fwd_r2c_cos);
+    fftw_execute_r2r(plan_fwd_r2r_cos, v_cross_rot2_r, v_cross_rot2_z_r);
+    fftw_execute_dft_r2c(plan_fwd_r2c_cos, v_cross_rot2_z_r, v_cross_rot2_c);
 
-    in = v_cross_rot3_r; in_z = v_cross_rot3_z_r; complex_out = v_cross_rot3_c;
-    initialize_fwd_r2r_sin(nx, ny, nz1, nz2);   
-    initialize_fwd_r2c_sin(nx, ny, nz1, nz2); 
-    fftw_execute(plan_fwd_r2r_sin);
-    fftw_execute(plan_fwd_r2c_sin);   
+    fftw_execute_r2r(plan_fwd_r2r_sin, v_cross_rot3_r, v_cross_rot3_z_r);
+    fftw_execute_dft_r2c(plan_fwd_r2c_sin, v_cross_rot3_z_r, v_cross_rot3_c);
 
     normalization(v_cross_rot1_c, nx,(ny/2+1), nz1, nx*ny*Nz);
     normalization(v_cross_rot2_c, nx,(ny/2+1), nz1, nx*ny*Nz);
@@ -532,23 +509,15 @@ void compute_f(fftw_complex* f1_c_, fftw_complex* f2_c_, fftw_complex* f3_c_,dou
         }
     }
     // f
-    in = f1_r_; in_z = f1_z_r_; complex_out = f1_c_;
-    initialize_fwd_r2r_cos(nx, ny, nz1, nz2);
-    initialize_fwd_r2c_cos(nx, ny, nz1, nz2);
-    fftw_execute(plan_fwd_r2r_cos);
-    fftw_execute(plan_fwd_r2c_cos);
+    fftw_execute_r2r(plan_fwd_r2r_cos, f1_r_, f1_z_r_);
+    fftw_execute_dft_r2c(plan_fwd_r2c_cos, f1_z_r_, f1_c_);
 
-    in = f2_r_; in_z = f2_z_r_; complex_out = f2_c_;
-    initialize_fwd_r2r_cos(nx, ny, nz1, nz2);
-    initialize_fwd_r2c_cos(nx, ny, nz1, nz2);
-    fftw_execute(plan_fwd_r2r_cos);
-    fftw_execute(plan_fwd_r2c_cos);
+    fftw_execute_r2r(plan_fwd_r2r_cos, f2_r_, f2_z_r_);
+    fftw_execute_dft_r2c(plan_fwd_r2c_cos, f2_z_r_, f2_c_);
 
-    in = f3_r_; in_z = f3_z_r_; complex_out = f3_c_;
-    initialize_fwd_r2r_sin(nx, ny, nz1, nz2);
-    initialize_fwd_r2c_sin(nx, ny, nz1, nz2);
-    fftw_execute(plan_fwd_r2r_sin);
-    fftw_execute(plan_fwd_r2c_sin);
+    fftw_execute_r2r(plan_fwd_r2r_sin, f3_r_, f3_z_r_);
+    fftw_execute_dft_r2c(plan_fwd_r2c_sin, f3_z_r_, f3_c_);
+
     normalization(f1_c_, nx, (ny / 2 + 1), nz1, nx * ny * Nz);
     normalization(f2_c_, nx, (ny / 2 + 1), nz1, nx * ny * Nz);
     normalization(f3_c_, nx, (ny / 2 + 1), nz2, nx * ny * Nz);
@@ -932,32 +901,33 @@ int main() {
         }
     }
     
-    // V
+    //
     in = V1_r; in_z = V1_z_r; complex_out = V1_c;
     initialize_fwd_r2r_cos(nx, ny, nz1, nz2);   
-    initialize_fwd_r2c_cos(nx, ny, nz1, nz2);    
-    fftw_execute(plan_fwd_r2r_cos);
-    fftw_execute(plan_fwd_r2c_cos);
-
-    in = V2_r; in_z = V2_z_r; complex_out = V2_c;
-    initialize_fwd_r2r_cos(nx, ny, nz1, nz2);   
-    initialize_fwd_r2c_cos(nx, ny, nz1, nz2); 
-    fftw_execute(plan_fwd_r2r_cos);
-    fftw_execute(plan_fwd_r2c_cos);
-
+    initialize_fwd_r2c_cos(nx, ny, nz1, nz2);  
     in = V3_r; in_z = V3_z_r; complex_out = V3_c;
     initialize_fwd_r2r_sin(nx, ny, nz1, nz2);   
     initialize_fwd_r2c_sin(nx, ny, nz1, nz2); 
-    fftw_execute(plan_fwd_r2r_sin);
-    fftw_execute(plan_fwd_r2c_sin);
+    complex_out = V1_c; re_out_xy = V1_out_xy_r; re_out = V1_out_r;
+    initialize_bwd_c2r_cos(nx, ny, nz1, nz2);   
+    initialize_bwd_r2r_cos(nx, ny, nz1, nz2);  
+    complex_out = V3_c; re_out_xy = V3_out_xy_r; re_out = V3_out_r;
+    initialize_bwd_c2r_sin(nx, ny, nz1, nz2);   
+    initialize_bwd_r2r_sin(nx, ny, nz1, nz2); 
 
-    
+    //
+    fftw_execute_r2r(plan_fwd_r2r_cos, V1_r, V1_z_r);
+    fftw_execute_dft_r2c(plan_fwd_r2c_cos, V1_z_r, V1_c);
+
+    fftw_execute_r2r(plan_fwd_r2r_cos, V2_r, V2_z_r);
+    fftw_execute_dft_r2c(plan_fwd_r2c_cos, V2_z_r, V2_c);
+
+    fftw_execute_r2r(plan_fwd_r2r_sin, V3_r, V3_z_r);
+    fftw_execute_dft_r2c(plan_fwd_r2c_sin, V3_z_r, V3_c);
+
     // p
-    in = p_r; in_z = p_z_r; complex_out = p_c;
-    initialize_fwd_r2r_cos(nx, ny, nz1, nz2);   
-    initialize_fwd_r2c_cos(nx, ny, nz1, nz2);    
-    fftw_execute(plan_fwd_r2r_cos);
-    fftw_execute(plan_fwd_r2c_cos);
+    fftw_execute_r2r(plan_fwd_r2r_cos, p_r, p_z_r);
+    fftw_execute_dft_r2c(plan_fwd_r2c_cos, p_z_r, p_c);
 
     // normalization
     normalization(V1_c, nx,(ny/2+1), nz1, nx*ny*Nz);
@@ -968,25 +938,16 @@ int main() {
     double start = omp_get_wtime();
     NavierStokes(V1_c,V2_c,V3_c,p_c,V1_r,V2_r,V3_r,nx,ny,nz1,nz2,Nz,L_x,L_y,L_z,nt,tau);
     double end = omp_get_wtime();
-    cout << "time parallel = " << (end - start) * 1000 << "ms" << endl;
+    cout << setprecision(3) <<"time parallel = " << (end - start) << "s" << endl;
     
-    complex_out = V1_c; re_out_xy = V1_out_xy_r; re_out = V1_out_r;
-    initialize_bwd_c2r_cos(nx, ny, nz1, nz2);   
-    initialize_bwd_r2r_cos(nx, ny, nz1, nz2);  
-    fftw_execute(plan_bwd_c2r_cos);
-    fftw_execute(plan_bwd_r2r_cos);
+    fftw_execute_dft_c2r(plan_bwd_c2r_cos,V1_c,V1_out_xy_r);
+    fftw_execute_r2r(plan_bwd_r2r_cos, V1_out_xy_r, V1_out_r);
 
-    complex_out = V2_c; re_out_xy = V2_out_xy_r; re_out = V2_out_r;
-    initialize_bwd_c2r_cos(nx, ny, nz1, nz2);   
-    initialize_bwd_r2r_cos(nx, ny, nz1, nz2);  
-    fftw_execute(plan_bwd_c2r_cos);
-    fftw_execute(plan_bwd_r2r_cos);
+    fftw_execute_dft_c2r(plan_bwd_c2r_cos,V2_c,V2_out_xy_r);
+    fftw_execute_r2r(plan_bwd_r2r_cos, V2_out_xy_r, V2_out_r);
     
-    complex_out = V3_c; re_out_xy = V3_out_xy_r; re_out = V3_out_r;
-    initialize_bwd_c2r_sin(nx, ny, nz1, nz2);   
-    initialize_bwd_r2r_sin(nx, ny, nz1, nz2); 
-    fftw_execute(plan_bwd_c2r_sin);
-    fftw_execute(plan_bwd_r2r_sin);
+    fftw_execute_dft_c2r(plan_bwd_c2r_sin,V3_c,V3_out_xy_r);
+    fftw_execute_r2r(plan_bwd_r2r_sin, V3_out_xy_r, V3_out_r);
 
     double err1 = 0.0, err2 = 0.0, err3= 0.0, err1_, err2_, err3_;
 
@@ -1014,7 +975,8 @@ int main() {
     
     // для даления планов
     finalize_fft_plans();
-
+    fftw_cleanup_threads();
+    
     fftw_free(V1_r);
     fftw_free(V2_r);
     fftw_free(V3_r);
